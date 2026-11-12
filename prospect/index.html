@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111318" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F4F5F8" media="(prefers-color-scheme: light)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Prospecta">
+<meta name="description" content="Ache youtubers por tags, pegue e-mail e redes sociais e envie mensagens personalizadas.">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="styles.css">
+<title>Prospecta</title>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <img src="icons/icon-192.png" alt="" width="28" height="28">
+    <span>Prospecta</span>
+  </div>
+  <button class="quota" id="quotaPill" type="button" aria-label="Cota diária da API do YouTube">
+    <span class="quota-bar"><span id="quotaFill"></span></span>
+    <span id="quotaText">0 / 10.000</span>
+  </button>
+</header>
+
+<main>
+  <!-- ================= BUSCAR ================= -->
+  <section id="view-search" class="view" aria-labelledby="h-search">
+    <h1 id="h-search" class="sr-only">Buscar youtubers</h1>
+
+    <div id="keyCard" class="card setup" hidden>
+      <h2>Falta só a chave do YouTube</h2>
+      <p>O app busca direto na API oficial do YouTube. Cole sua chave gratuita (leva 2 minutos para criar).</p>
+      <div class="inline-form">
+        <input id="keyQuick" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="AIza…">
+        <button class="btn primary" id="keyQuickSave" type="button">Salvar</button>
+      </div>
+      <button class="link-btn" type="button" data-go="settings" data-open="guide-key">Como criar a chave →</button>
+    </div>
+
+    <form id="searchForm" class="card form" autocomplete="off" novalidate>
+      <label class="label" for="tagInput">Tags / palavras-chave</label>
+      <div class="tag-box" id="tagBox">
+        <span id="tagChips" class="tag-chips"></span>
+        <input id="tagInput" type="text" enterkeyhint="enter" autocapitalize="off" spellcheck="false" placeholder="minecraft adventure, smp">
+      </div>
+      <p class="hint">Separe com vírgula. Use <b>-</b> para excluir <span class="nowrap">(ex.: -roblox)</span>.</p>
+      <div id="recent" class="recent" hidden></div>
+
+      <div class="seg" id="matchMode" role="radiogroup" aria-label="Como combinar as tags">
+        <button type="button" role="radio" data-v="all">Todas as tags</button>
+        <button type="button" role="radio" data-v="any">Qualquer uma</button>
+      </div>
+
+      <div class="grid2">
+        <div>
+          <label class="label" for="minSubs">Mínimo de inscritos</label>
+          <select id="minSubs"></select>
+          <input id="minCustom" class="custom-num" type="number" inputmode="numeric" min="0" placeholder="ex.: 7500" hidden>
+        </div>
+        <div>
+          <label class="label" for="maxSubs">Máximo de inscritos</label>
+          <select id="maxSubs"></select>
+          <input id="maxCustom" class="custom-num" type="number" inputmode="numeric" min="0" placeholder="ex.: 750000" hidden>
+        </div>
+      </div>
+
+      <details class="more" id="moreFilters">
+        <summary>Mais filtros</summary>
+        <div class="grid2">
+          <div>
+            <label class="label" for="fType">Procurar em</label>
+            <select id="fType">
+              <option value="video">Vídeos (recomendado)</option>
+              <option value="channel">Nome/descrição do canal</option>
+            </select>
+          </div>
+          <div>
+            <label class="label" for="fSince">Postou vídeo nos últimos</label>
+            <select id="fSince">
+              <option value="">Qualquer data</option>
+              <option value="7">7 dias</option>
+              <option value="30">30 dias</option>
+              <option value="90">3 meses</option>
+              <option value="180">6 meses</option>
+              <option value="365">1 ano</option>
+            </select>
+          </div>
+          <div>
+            <label class="label" for="fLang">Idioma</label>
+            <select id="fLang">
+              <option value="">Qualquer</option>
+              <option value="en">Inglês</option>
+              <option value="pt">Português</option>
+              <option value="es">Espanhol</option>
+              <option value="fr">Francês</option>
+              <option value="de">Alemão</option>
+            </select>
+          </div>
+          <div>
+            <label class="label" for="fRegion">País</label>
+            <select id="fRegion">
+              <option value="">Qualquer</option>
+              <option value="US">Estados Unidos</option>
+              <option value="GB">Reino Unido</option>
+              <option value="CA">Canadá</option>
+              <option value="AU">Austrália</option>
+              <option value="BR">Brasil</option>
+              <option value="PT">Portugal</option>
+              <option value="MX">México</option>
+              <option value="ES">Espanha</option>
+              <option value="DE">Alemanha</option>
+              <option value="FR">França</option>
+            </select>
+          </div>
+          <div>
+            <label class="label" for="fOrder">Ordenar vídeos por</label>
+            <select id="fOrder">
+              <option value="relevance">Relevância</option>
+              <option value="date">Mais recentes</option>
+              <option value="viewCount">Mais vistos</option>
+            </select>
+          </div>
+        </div>
+        <label class="switch"><input type="checkbox" id="fDeep"><span>Ler descrições dos últimos vídeos <small>acha bem mais contatos</small></span></label>
+        <label class="switch"><input type="checkbox" id="fOnlyContact"><span>Só canais com algum contato</span></label>
+        <label class="switch"><input type="checkbox" id="fHideKnown"><span>Esconder quem já está nos meus leads</span></label>
+        <label class="switch"><input type="checkbox" id="fHidden"><span>Incluir canais com inscritos ocultos</span></label>
+      </details>
+
+      <button class="btn primary big" id="searchBtn" type="submit">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        Buscar youtubers
+      </button>
+    </form>
+
+    <div id="searchStatus" class="status" hidden></div>
+    <div id="resultsHead" class="results-head" hidden></div>
+    <div id="results" class="list"></div>
+    <button id="moreBtn" class="btn ghost wide" type="button" hidden>Buscar mais canais</button>
+  </section>
+
+  <!-- ================= LEADS ================= -->
+  <section id="view-leads" class="view" aria-labelledby="h-leads" hidden>
+    <div class="view-head">
+      <h1 id="h-leads">Leads</h1>
+      <button class="btn ghost sm" id="leadsMenuBtn" type="button">Exportar…</button>
+    </div>
+    <input id="leadSearch" class="search-input" type="search" placeholder="Buscar nome, e-mail, @…" autocomplete="off">
+    <div class="chips-scroll" id="statusFilter" role="tablist" aria-label="Filtrar por status"></div>
+    <div class="toolbar">
+      <label class="check"><input type="checkbox" id="onlyEmail"> Só com e-mail</label>
+      <button class="btn ghost sm" id="selectBtn" type="button">Selecionar</button>
+    </div>
+    <div id="leadList" class="list"></div>
+    <button id="leadMore" class="btn ghost wide" type="button" hidden>Mostrar mais</button>
+  </section>
+
+  <!-- ================= MENSAGEM ================= -->
+  <section id="view-message" class="view" aria-labelledby="h-msg" hidden>
+    <div class="view-head"><h1 id="h-msg">Mensagem padrão</h1></div>
+    <p class="lead-text">Escreva uma vez. Ao enviar, <b>(cliente)</b> vira o nome de cada youtuber automaticamente.</p>
+
+    <div class="card form">
+      <div class="vars" id="varChips" aria-label="Inserir variável"></div>
+      <label class="label" for="tSubject">Assunto do e-mail</label>
+      <input id="tSubject" type="text" autocomplete="off">
+      <label class="label" for="tBody">Texto do e-mail</label>
+      <textarea id="tBody" rows="10"></textarea>
+      <label class="label" for="tDm">Mensagem curta (DM no X, Instagram, Discord…)</label>
+      <textarea id="tDm" rows="4"></textarea>
+      <div id="tplWarn" class="warn" hidden></div>
+      <div class="row-btns">
+        <button class="btn ghost sm" type="button" data-reset="pt">Restaurar modelo PT</button>
+        <button class="btn ghost sm" type="button" data-reset="en">Restaurar modelo EN</button>
+      </div>
+    </div>
+
+    <h2 class="section-title">Prévia</h2>
+    <div class="card preview" id="tplPreview"></div>
+  </section>
+
+  <!-- ================= AJUSTES ================= -->
+  <section id="view-settings" class="view" aria-labelledby="h-set" hidden>
+    <div class="view-head"><h1 id="h-set">Ajustes</h1></div>
+
+    <div class="card form">
+      <h2>Chave da API do YouTube</h2>
+      <div class="inline-form">
+        <input id="sKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="AIza…">
+        <button class="btn ghost" id="sKeyShow" type="button" aria-label="Mostrar chave">Ver</button>
+      </div>
+      <div class="row-btns">
+        <button class="btn primary sm" id="sKeySave" type="button">Salvar</button>
+        <button class="btn ghost sm" id="sKeyTest" type="button">Testar chave</button>
+      </div>
+      <p class="hint" id="sKeyStatus"></p>
+      <details class="guide" id="guide-key">
+        <summary>Como criar a chave (grátis, ~2 min)</summary>
+        <ol>
+          <li>Abra <a href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener">console.cloud.google.com</a> e entre com sua conta Google. Crie um projeto (ex.: <i>Prospecta</i>).</li>
+          <li>Abra a <a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank" rel="noopener">YouTube Data API v3</a> e toque em <b>Ativar</b>.</li>
+          <li>Vá em <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Credenciais</a> → <b>Criar credenciais</b> → <b>Chave de API</b>. Copie e cole aqui.</li>
+          <li><b>Recomendado:</b> em “Restrições de aplicativo” escolha <b>Sites</b> e adicione <code class="copyable" data-copy="origin-wild"></code>. Em “Restrições de API” escolha só a YouTube Data API v3.</li>
+        </ol>
+        <p class="hint">A cota grátis é de 10.000 unidades por dia. Cada página de busca gasta ~100–110 (≈ 50 vídeos analisados). Ela renova à meia-noite do horário do Pacífico (≈ 5h em Brasília).</p>
+      </details>
+    </div>
+
+    <div class="card form">
+      <h2>Como enviar os e-mails</h2>
+      <div class="radio-list" id="sMode">
+        <label><input type="radio" name="mode" value="mailto"><span><b>App de e-mail do celular</b><small>Abre o e-mail pronto (já personalizado) no seu app. Você só toca em Enviar. Funciona sem configurar nada.</small></span></label>
+        <label><input type="radio" name="mode" value="gmailapp"><span><b>App do Gmail (iPhone)</b><small>Abre direto no app do Gmail com tudo preenchido.</small></span></label>
+        <label><input type="radio" name="mode" value="gmailweb"><span><b>Gmail no navegador</b><small>Abre a tela de escrever do Gmail com tudo preenchido.</small></span></label>
+        <label><input type="radio" name="mode" value="gmailapi"><span><b>Envio automático pelo Gmail</b><small>Um toque envia na hora, e dá para enviar para vários de uma vez. Precisa de uma configuração única (abaixo).</small></span></label>
+      </div>
+
+      <div id="gmailBox" hidden>
+        <label class="label" for="sClientId">ID do cliente OAuth (Google Cloud)</label>
+        <input id="sClientId" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="123…apps.googleusercontent.com">
+        <div class="gmail-status" id="gmailStatus"></div>
+        <div class="row-btns">
+          <button class="btn primary sm" id="gmailConnect" type="button">Conectar Gmail</button>
+          <button class="btn ghost sm" id="gmailDisconnect" type="button">Desconectar</button>
+        </div>
+        <label class="label" for="sDelay">Intervalo entre e-mails no envio em massa</label>
+        <select id="sDelay">
+          <option value="5">5 segundos</option>
+          <option value="10">10 segundos</option>
+          <option value="20">20 segundos</option>
+          <option value="30">30 segundos</option>
+          <option value="60">1 minuto</option>
+        </select>
+        <details class="guide" id="guide-gmail">
+          <summary>Como configurar o envio automático (uma vez só)</summary>
+          <ol>
+            <li>No mesmo projeto do Google Cloud, ative a <a href="https://console.cloud.google.com/apis/library/gmail.googleapis.com" target="_blank" rel="noopener">Gmail API</a>.</li>
+            <li>Abra a <a href="https://console.cloud.google.com/auth/overview" target="_blank" rel="noopener">Google Auth Platform</a> (tela de permissão OAuth) → <b>Começar</b>. Nome do app: <i>Prospecta</i>. Público: <b>Externo</b>. Coloque seu e-mail.</li>
+            <li>Em <b>Público-alvo</b> → <b>Usuários de teste</b>, adicione o seu Gmail.</li>
+            <li>Em <a href="https://console.cloud.google.com/auth/clients" target="_blank" rel="noopener">Clientes</a> → <b>Criar cliente</b> → tipo <b>Aplicativo da Web</b>.<br>
+              Origens JavaScript autorizadas: <code class="copyable" data-copy="origin"></code><br>
+              URIs de redirecionamento autorizados: <code class="copyable" data-copy="redirect"></code></li>
+            <li>Copie o <b>ID do cliente</b>, cole acima e toque em <b>Conectar Gmail</b>. Se aparecer “O Google não verificou este app”, toque em <b>Avançado → Acessar</b> (o app é seu).</li>
+          </ol>
+          <p class="hint">O login dura 1 hora; depois o app pede para conectar de novo com um toque. O Gmail permite ~500 envios por dia — use intervalos para não cair no spam.</p>
+        </details>
+      </div>
+    </div>
+
+    <div class="card form">
+      <h2>Busca</h2>
+      <label class="label" for="sPages">Páginas por busca (cada uma ≈ 50 vídeos, ~105 de cota)</label>
+      <select id="sPages">
+        <option value="1">1 página</option>
+        <option value="2">2 páginas</option>
+        <option value="3">3 páginas</option>
+        <option value="5">5 páginas</option>
+      </select>
+    </div>
+
+    <div class="card form">
+      <h2>Seus dados</h2>
+      <p class="hint">Tudo fica salvo só neste aparelho. Faça backup para levar para outro celular ou computador.</p>
+      <div class="row-btns">
+        <button class="btn ghost sm" id="sExportCsv" type="button">Exportar planilha (CSV)</button>
+        <button class="btn ghost sm" id="sBackup" type="button">Fazer backup</button>
+        <button class="btn ghost sm" id="sRestore" type="button">Restaurar backup</button>
+        <input type="file" id="sRestoreFile" accept="application/json,.json" hidden>
+      </div>
+      <button class="btn danger sm" id="sWipe" type="button">Apagar todos os leads</button>
+    </div>
+    <p class="footnote">Prospecta usa a API oficial do YouTube e só lê informações públicas dos canais.</p>
+  </section>
+</main>
+
+<nav class="tabbar" aria-label="Seções">
+  <button class="tab" data-tab="search" type="button">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <span>Buscar</span>
+  </button>
+  <button class="tab" data-tab="leads" type="button">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.8a3.5 3.5 0 0 1 0 6.4M18.5 14.8c1.6.8 2.6 2.5 3 5.2"/></svg>
+    <span>Leads</span><b class="badge" id="leadBadge" hidden></b>
+  </button>
+  <button class="tab" data-tab="message" type="button">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg>
+    <span>Mensagem</span>
+  </button>
+  <button class="tab" data-tab="settings" type="button">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+    <span>Ajustes</span>
+  </button>
+</nav>
+
+<div id="bulkBar" class="bulkbar" hidden>
+  <button class="btn ghost sm" id="bulkAll" type="button">Todos</button>
+  <button class="btn ghost sm" id="bulkStatus" type="button">Status</button>
+  <button class="btn primary sm" id="bulkSend" type="button">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3 10 14M21 3l-7 18-4-7-7-4 18-7z"/></svg>
+    <span id="bulkCount">Enviar e-mail</span>
+  </button>
+</div>
+
+<div id="sheet" class="sheet-wrap" hidden>
+  <div class="sheet-backdrop" data-close></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-head">
+      <span class="sheet-grip" aria-hidden="true"></span>
+      <h2 id="sheetTitle"></h2>
+      <button class="icon-btn" type="button" data-close aria-label="Fechar">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="js/core.js"></script>
+<script src="js/app.js"></script>
+<script>if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
+</body>
+</html>
